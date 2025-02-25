@@ -1,0 +1,67 @@
+import os, time
+
+TOP_BLOCK    = chr(9600)  # '▀'
+BOTTOM_BLOCK = chr(9604)  # '▄'
+FULL_BLOCK   = chr(9608)  # '█'
+
+DELAY = 0.05
+
+FUNC1 = eval('lambda x, y: (x & y) & (x ^ y) % 19')
+FUNC2 = eval('lambda i, j: (i | j) % 50')
+
+y1 = 0
+y2 = 0
+
+while True:
+   
+    totalWidth = os.get_terminal_size()[0]
+    
+
+    width1 = int(totalWidth * 0.5)
+    width2 = totalWidth - width1
+    
+
+    part1_chars = []
+    for x in range(width1):
+        topBit = FUNC1(x, y1)
+        bottomBit = FUNC1(x, y1 + 1)
+
+        topBit = not topBit
+        bottomBit = not bottomBit
+
+        if topBit and bottomBit:
+            part1_chars.append(FULL_BLOCK)
+        elif topBit and not bottomBit:
+            part1_chars.append(TOP_BLOCK)
+        elif not topBit and bottomBit:
+            part1_chars.append(BOTTOM_BLOCK)
+        else:
+            part1_chars.append(' ')
+  
+    part1_str = ''.join(part1_chars)
+
+    part2_chars = []
+    for i in range(width2):
+        topBit = FUNC2(i, y2)
+        bottomBit = FUNC2(i, y2 + 1)
+
+        topBit = not topBit
+        bottomBit = not bottomBit
+
+        if topBit and bottomBit:
+            part2_chars.append(FULL_BLOCK)
+        elif topBit and not bottomBit:
+            part2_chars.append(TOP_BLOCK)
+        elif not topBit and bottomBit:
+            part2_chars.append(BOTTOM_BLOCK)
+        else:
+            part2_chars.append(' ')
+ 
+    part2_str = ''.join(part2_chars)
+
+    print(part1_str + part2_str, flush=True)
+
+    y1 += 2
+    y2 += 4 
+
+    time.sleep(DELAY)
