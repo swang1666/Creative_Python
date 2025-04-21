@@ -1,0 +1,45 @@
+import tkinter as tk
+import time
+import random
+
+def show_confirm(level=1, start_time=None):
+    if start_time is None:
+        start_time = time.time()
+    
+    if time.time() - start_time >= 60:
+        return
+
+    confirm_window = tk.Toplevel()
+    confirm_window.title(f"Confirm Level {level}")
+
+    w, h = 300, 100
+    
+    screen_width = confirm_window.winfo_screenwidth()
+    screen_height = confirm_window.winfo_screenheight()
+    
+    x = random.randint(0, screen_width - w)
+    y = random.randint(0, screen_height - h)
+    
+    confirm_window.geometry(f"{w}x{h}+{x}+{y}")
+
+    label = tk.Label(confirm_window, text=f"Are you sure? (Level {level})", font=("Helvetica", 12))
+    label.pack(pady=10)
+
+    confirm_window.after(300, lambda: show_confirm(level + 1, start_time))
+
+
+    cancel_button = tk.Button(confirm_window, text="cancel", command=confirm_window.destroy)
+    cancel_button.pack(pady=5)
+
+root = tk.Tk()
+root.title("Infinite Confirm")
+root.geometry("300x200")
+
+main_label = tk.Label(root, text="Please confirm!")
+main_label.pack(pady=20)
+
+main_button = tk.Button(root, text="Confirm!", font=("Helvetica", 14), command=lambda: show_confirm(1))
+main_button.pack(pady=10)
+
+
+root.mainloop()

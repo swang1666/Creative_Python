@@ -1,0 +1,118 @@
+import pygame
+import random
+import sys
+import math
+
+V_W, V_H = 80, 60
+SCALE    = 10
+WIDTH, HEIGHT = V_W*SCALE, V_H*SCALE
+FPS = 60
+NUM_COINS = 10
+TARGET    = NUM_COINS
+
+pygame.init()
+screen  = pygame.display.set_mode((WIDTH, HEIGHT))
+virtual = pygame.Surface((V_W, V_H))
+clock   = pygame.time.Clock()
+
+font    = pygame.font.SysFont(None, 8)
+
+
+class Player:
+    def __init__(self):
+        self.x, self.y = V_W//2, V_H//2
+        self.speed = 1
+    def update(self):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT] and self.x>0:       self.x -= self.speed
+        if keys[pygame.K_RIGHT] and self.x<V_W-1:  self.x += self.speed
+        if keys[pygame.K_UP] and self.y>0:         self.y -= self.speed
+        if keys[pygame.K_DOWN] and self.y<V_H-1:   self.y += self.speed
+
+class Coin:
+    def __init__(self):
+        self.x = random.randrange(2, V_W-2)
+        self.y = random.randrange(2, V_H-2)
+
+class Enemy:
+    def __init__(self, player):
+        self.p = player
+        self.x = random.randrange(V_W)
+        self.y = random.randrange(V_H)
+        angle = random.uniform(0, 2*math.pi)
+        self.vx = math.cos(angle)
+        self.vy = math.sin(angle)
+        self.speed = 0.7
+
+    def update(self):
+        dx = self.p.x - self.x
+        dy = self.p.y - self.y
+        d = math.hypot(dx, dy) or 1
+        self.vx += (dx/d)*0.05 + random.uniform(-0.03, 0.03)
+        self.vy += (dy/d)*0.05 + random.uniform(-0.03, 0.03)
+        length = math.hypot(self.vx, self.vy)
+        self.vx, self.vy = self.vx/length*self.speed, self.vy/length*self.speed
+
+        self.x += self.vx
+        self.y += self.vy
+  
+        if self.x < 0 or self.x > V_W-1: self.vx *= -1
+        if self.y < 0 or self.y > V_H-1: self.vy *= -1
+        self.x = max(0, min(self.x, V_W-1))
+        self.y = max(0, min(self.y, V_H-1))
+
+
+player    = Player()
+coins     = [Coin() for _ in range(NUM_COINS)]
+enemy     = Enemy(player)
+score     = 0
+start     = pygame.time.get_ticks()
+game_over = False
+win       = False
+
+
+while True:
+    clock.tick(FPS)
+    for evt in pygame.event.get():
+        if evt.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+
+    if not game_over and not win:
+        player.update()
+        enemy.update()
+
+        for c in coins[:]:
+            if player.x == int(c.x) and player.y == int(c.y):
+                coins.remove(c)
+                score += 1
+                if score >= TARGET:
+                    win = True
+
+        if player.x == int(enemy.x) and player.y == int(enemy.y):
+            game_over = True
+
+    virtual.fill((30, 30, 40))
+
+   
+    for c in coins:
+        virtual.set_at((int(c.x), int(c.y)), (200, 200, 50))
+ 
+    virtual.set_at((player.x, player.y), (50, 200, 50))
+   
+    virtual.set_at((int(enemy.x), int(enemy.y)), (200, 50, 50))
+
+    
+    elapsed = (pygame.time.get_ticks() - start) // 1000
+    hud = font.render(f"S{score} T{elapsed}s", False, (255, 255, 255))
+    virtual.blit(hud, (1, 1))
+
+    if game_over:
+        msg = font.render("GAME OVER", False, (255, 50, 50))
+        virtual.blit(msg, ((V_W-msg.get_width())//2, (V_H-msg.get_height())//2))
+    elif win:
+        msg = font.render("YOU WIN!", False, (50, 255, 50))
+        virtual.blit(msg, ((V_W-msg.get_width())//2, (V_H-msg.get_height())//2))
+
+    screen.blit(pygame.transform.scale(virtual, (WIDTH, HEIGHT)), (0, 0))
+    pygame.display.flip()
