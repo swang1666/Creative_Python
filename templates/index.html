@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MY PORTFOLIO</title>
+  <!-- 一定要用 url_for 指向 static 文件夹里的 style.css -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <script defer src="{{ url_for('static', filename='script.js') }}"></script>
+</head>
+<body>
+  <div class="header">
+    <h1>MY PORTFOLIO</h1>
+  </div>
+
+  <div class="portfolio">
+    {% for name in assignments %}
+    <div class="portfolio-item" style="background:#888;">
+      <!-- 链接到 Flask 动态路由 /view/filename -->
+      <a href="{{ url_for('view', filename=name) }}">
+        <!-- 去掉后缀 .py，只显示 Assignment_1 等 -->
+        <h3>{{ name[:-3] }}</h3>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+</body>
+</html>

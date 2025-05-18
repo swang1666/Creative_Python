@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{ title }}</title>
+
+  <!-- 根样式：背景色、代码区、按钮等 -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='root.css') }}">
+  <!-- 原 style.css：网格、方块展示等 -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <!-- Prism.js 代码高亮 -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.28.0/themes/prism-tomorrow.min.css"
+  />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.28.0/prism.min.js"></script>
+  <!-- 如果有脚本，也可以一起引用 -->
+  <script defer src="{{ url_for('static', filename='script.js') }}"></script>
+</head>
+<body>
+  <div class="header">
+    <h1>{{ title }}</h1>
+    <p>
+      <a href="{{ url_for('index') }}" class="return-button">
+        ← RETURN
+      </a>
+    </p>
+  </div>
+
+  <section class="code-section">
+    <h2>Source Code</h2>
+    <pre><code class="language-python">{{ code }}</code></pre>
+  </section>
+
+  <section class="output-section">
+    <h2>Program Output (first 20 lines)</h2>
+    <pre>{{ output }}</pre>
+  </section>
+
+  <section class="screenshot-section">
+    <h2>Screenshot</h2>
+    <img 
+      src="{{ url_for('static', filename='screenshots/' + title[:-3] + '.png') }}"
+      alt="Screenshot of {{ title }}"
+      onerror="this.style.display='none'"
+      style="max-width:100%;border:1px solid #ccc;padding:4px;"
+    />
+  </section>
+</body>
+</html>
