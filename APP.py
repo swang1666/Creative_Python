@@ -35,11 +35,10 @@ def view(filename):
     if not os.path.isfile(path):
         abort(404)
 
-    # 读取源码
     with open(path, encoding="utf-8") as f:
         code = f.read()
 
-    # 启动子进程抓取前 20 行输出
+    
     proc = subprocess.Popen(
         ["python", path],
         stdout=subprocess.PIPE,
@@ -55,7 +54,7 @@ def view(filename):
     proc.kill()
     output = "".join(lines)
 
-    # 仅当打开 Assignment_10.py 时显示视频
+    
     show_video = (filename == "Assignment_10.py")
 
     return render_template(
