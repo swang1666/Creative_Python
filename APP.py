@@ -1,24 +1,33 @@
 import os
-import subprocess
+import subprocess     # ← 确保这一行在这里
+import re
 from flask import Flask, render_template, abort
-from jinja2 import TemplateNotFound
 
-app = Flask(
-    __name__,
-    static_folder="static",
-    template_folder="templates"
-)
 
+app = Flask(__name__,
+            static_folder="static",
+            template_folder="templates")
 ASSIGN_DIR = "Assignments"
+
+def assignment_number(fn: str) -> int:
+    """
+    从 'Assignment_10.py' 里提取出 10 这个数字并返回，
+    如果匹配不上，就放到最后（返回一个很大的数）。
+    """
+    m = re.match(r"Assignment_(\d+)\.py$", fn)
+    return int(m.group(1)) if m else 10**9
 
 @app.route("/")
 def index():
-    try:
-        files = sorted(f for f in os.listdir(ASSIGN_DIR)
-                       if f.startswith("Assignment_") and f.endswith(".py"))
-    except FileNotFoundError:
-        files = []
+    # 先找出所有 .py
+    files = [f for f in os.listdir(ASSIGN_DIR)
+             if f.startswith("Assignment_") and f.endswith(".py")]
+    # 按数字大小排序
+    files = sorted(files, key=assignment_number)
     return render_template("index.html", assignments=files)
+
+# ... 其他路由不变 ...
+
 
 @app.route("/view/<filename>")
 def view(filename):

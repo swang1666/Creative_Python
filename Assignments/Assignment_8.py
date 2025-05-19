@@ -1,0 +1,124 @@
+# main.py
+
+import os, re, uuid, time, logging
+from pathlib import Path
+from typing import List, Optional
+from contextlib import asynccontextmanager
+
+import uvicorn
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
+
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_chroma import Chroma
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+from langchain.schema import Document
+
+# —— Config & Logging —— 
+os.environ.setdefault("LANGCHAIN_TRACING_V2", "true")
+OPENAI_API_KEY         = os.getenv("OPENAI_API_KEY")
+OPENAI_API_BASE        = os.getenv("OPENAI_API_BASE", "https://api.openai.com/v1")
+OPENAI_CHAT_MODEL      = os.getenv("OPENAI_CHAT_MODEL", "gpt-4o-mini")
+OPENAI_EMBEDDING_MODEL = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+PORT                     = int(os.getenv("PORT", "8012"))
+CHROMADB_DIRECTORY       = "chromaDB"
+CHROMADB_COLLECTION_NAME = "demo001"
+PROMPT_TEMPLATE_TXT      = "prompt_template.txt"
+STARRY_DESC_FILE         = "starry_night_description.txt"
+
+# —— Pydantic Models —— 
+class Message(BaseModel):
+    role: str
+    content: str
+
+class ChatCompletionRequest(BaseModel):
+    messages: List[Message]
+    stream: Optional[bool] = False
+
+class ChatCompletionResponseChoice(BaseModel):
+    index: int
+    message: Message
+    finish_reason: Optional[str] = None
+
+class ChatCompletionResponse(BaseModel):
+    id: str = Field(default_factory=lambda: f"chatcmpl-{uuid.uuid4().hex}")
+    object: str = "chat.completion"
+    created: int = Field(default_factory=lambda: int(time.time()))
+    choices: List[ChatCompletionResponseChoice]
+
+# —— FastAPI Lifespan: init LLM, embeddings, vectorstore, prompt, chain —— 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global model, embeddings, vectorstore, prompt, chain
+    logger.info("Initializing LLM, Chroma, Prompt and Chain...")
+    model = ChatOpenAI(base_url=OPENAI_API_BASE, api_key=OPENAI_API_KEY, model=OPENAI_CHAT_MODEL)
+    embeddings = OpenAIEmbeddings(base_url=OPENAI_API_BASE, api_key=OPENAI_API_KEY, model=OPENAI_EMBEDDING_MODEL)
+
+    vectorstore = Chroma(
+        persist_directory=CHROMADB_DIRECTORY,
+        collection_name=CHROMADB_COLLECTION_NAME,
+        embedding_function=embeddings
+    )
+
+    # 第一次启动时插入《星夜》文字描述
+    if vectorstore._collection.count() == 0:
+        starry_text = Path(STARRY_DESC_FILE).read_text(encoding="utf-8")
+        vectorstore.add_documents([
+            Document(page_content=starry_text, metadata={"title": "Starry Night"})
+        ])
+        vectorstore.persist()
+        logger.info("Inserted 'Starry Night' description into vectorstore.")
+
+    template_str = Path(PROMPT_TEMPLATE_TXT).read_text(encoding="utf-8")
+    prompt = ChatPromptTemplate.from_messages([("human", template_str)])
+
+    retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k":5})
+    chain = {"query": RunnablePassthrough(), "context": retriever} | prompt | (lambda x: x) | model
+
+    logger.info("Initialization complete.")
+    yield
+    logger.info("Shutting down service...")
+
+# —— FastAPI App Setup —— 
+app = FastAPI(lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
+)
+
+# —— ChatCompletion Endpoint —— 
+@app.post("/v1/chat/completions")
+async def chat_completions(request: ChatCompletionRequest):
+    if not all([model, embeddings, vectorstore, prompt, chain]):
+        raise HTTPException(500, "Service not initialized")
+    try:
+        user_query = request.messages[-1].content
+        result     = chain.invoke(user_query)
+        formatted  = re.sub(r'\n{2,}', '\n\n', result.content.strip())
+        resp = ChatCompletionResponse(
+            choices=[ChatCompletionResponseChoice(
+                index=0,
+                message=Message(role="assistant", content=formatted),
+                finish_reason="stop"
+            )]
+        )
+        return JSONResponse(content=resp.model_dump())
+    except Exception as e:
+        logger.error(f"Chat error: {e}")
+        raise HTTPException(500, str(e))
+
+@app.post("/generate")
+async def generate(req: ChatCompletionRequest):
+    # 复用已有的 chat_completions 逻辑
+    return await chat_completions(req)
+
+# —— Run Uvicorn —— 
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=PORT)
