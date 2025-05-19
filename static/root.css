@@ -1,19 +1,16 @@
-/* root.css: Base styles including same background as style.css */
 
 body {
   margin: 0;
   font-family: sans-serif;
-  background: #f5f5f5; /* same as style.css */
+  background: #f5f5f5;
   color: #0f0f0f;
 }
 
-/* Header styling */
 .header {
   text-align: center;
   padding: 2rem;
 }
 
-/* Portfolio grid (same as style.css) */
 .portfolio {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -60,7 +57,6 @@ body {
   text-align: center;
 }
 
-/* Code & Output sections: background same as page, font black */
 .code-section,
 .output-section {
   background: #f5f5f5;
@@ -71,7 +67,6 @@ body {
   max-width: 1000px;
 }
 
-/* Screenshot section: match code/output styling */
 .screenshot-section {
   background: #f5f5f5;
   color: #000;
@@ -89,7 +84,27 @@ body {
   border-radius: 4px;
 }
 
-/* Override Prism code block background */
+.video-section {
+  background: #f5f5f5;
+  color: #000;
+  padding: 1rem;
+  border-radius: 8px;
+  margin: 1rem auto;
+  max-width: 1000px;
+  text-align: center;
+}
+
+.video-section h2 {
+  margin-bottom: 0.5rem;
+}
+
+.video-section video {
+  max-width: 100%;
+  border: 1px solid rgba(0,0,0,0.1);
+  padding: 0.5rem;
+  border-radius: 4px;
+}
+
 pre[class*="language-"] {
   background: #f5f5f5 !important;
   color: #000 !important;
@@ -97,7 +112,6 @@ pre[class*="language-"] {
   border-radius: 4px !important;
 }
 
-/* Return button styling to match portfolio links */
 .return-button {
   display: inline-block;
   margin: 1rem;

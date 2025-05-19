@@ -58,6 +58,20 @@
     alt="Screenshot 3 of {{ title }}"
     onerror="this.style.display='none'"
   />
+
+    <section class="video-section">
+    <h2>Demo Video</h2>
+    <video 
+      controls 
+      preload="metadata"
+      style="max-width:100%;border-radius:4px;"
+    >
+      <source 
+        src="{{ url_for('static', filename='videos/' + title[:-3] + '.mp4') }}" 
+        type="video/mp4"
+      >
+      404 NOT FOUND
+    </video>
 </section>
 
 </body>
