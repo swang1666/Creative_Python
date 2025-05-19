@@ -26,19 +26,20 @@ def index():
     files = sorted(files, key=assignment_number)
     return render_template("index.html", assignments=files)
 
-# ... 其他路由不变 ...
+
 
 
 @app.route("/view/<filename>")
 def view(filename):
-    # 原来动态渲染 .py 的逻辑保持不变
     path = os.path.join(ASSIGN_DIR, filename)
     if not os.path.isfile(path):
         abort(404)
 
+    # 读取源码
     with open(path, encoding="utf-8") as f:
         code = f.read()
 
+    # 启动子进程抓取前 20 行输出
     proc = subprocess.Popen(
         ["python", path],
         stdout=subprocess.PIPE,
@@ -54,19 +55,16 @@ def view(filename):
     proc.kill()
     output = "".join(lines)
 
-    return render_template("detail.html",
-                           title=filename,
-                           code=code,
-                           output=output)
+    # 仅当打开 Assignment_10.py 时显示视频
+    show_video = (filename == "Assignment_10.py")
 
-# <<< 新增这一段，让 Flask 也去渲染那些搬到 templates/ 的 Assignment_*.html >>>
-@app.route("/<template_name>.html")
-def render_static_html(template_name):
-    try:
-        # 试着当成 Jinja 模板渲染
-        return render_template(f"{template_name}.html")
-    except TemplateNotFound:
-        abort(404)
+    return render_template(
+        "detail.html",
+        title=filename,
+        code=code,
+        output=output,
+        show_video=show_video
+    )
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -1,30 +1,26 @@
 <!doctype html>
 <html lang="zh">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>{{ title }}</title>
 
-  
+  <!-- 全局样式 -->
   <link rel="stylesheet" href="{{ url_for('static', filename='root.css') }}">
-  
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  
+
+  <!-- Prism.js 代码高亮 -->
   <link
     rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.28.0/themes/prism-tomorrow.min.css"
   />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.28.0/prism.min.js"></script>
-  
-  <script defer src="{{ url_for('static', filename='script.js') }}"></script>
 </head>
 <body>
   <div class="header">
     <h1>{{ title }}</h1>
     <p>
-      <a href="{{ url_for('index') }}" class="return-button">
-        ← RETURN
-      </a>
+      <a href="{{ url_for('index') }}" class="return-button">← RETURN</a>
     </p>
   </div>
 
@@ -38,41 +34,28 @@
     <pre>{{ output }}</pre>
   </section>
 
- <section class="screenshot-section">
-  <h2>Screenshots</h2>
-  <!-- 默认第 1 张 -->
-  <img
-    src="{{ url_for('static', filename='screenshots/' + title[:-3] + '.png') }}"
-    alt="Screenshot 1 of {{ title }}"
-    onerror="this.style.display='none'"
-  />
-  <!-- 第二张 -->
-  <img
-    src="{{ url_for('static', filename='screenshots/' + title[:-3] + '_2.png') }}"
-    alt="Screenshot 2 of {{ title }}"
-    onerror="this.style.display='none'"
-  />
-  <!-- 第三张 -->
-  <img
-    src="{{ url_for('static', filename='screenshots/' + title[:-3] + '_3.png') }}"
-    alt="Screenshot 3 of {{ title }}"
-    onerror="this.style.display='none'"
-  />
-
-    <section class="video-section">
+  {# 只有在 show_video 为 True 时才渲染视频 #}
+  {% if show_video %}
+  <section class="video-section">
     <h2>Demo Video</h2>
-    <video 
-      controls 
-      preload="metadata"
-      style="max-width:100%;border-radius:4px;"
-    >
-      <source 
-        src="{{ url_for('static', filename='videos/' + title[:-3] + '.mp4') }}" 
+    <video controls style="max-width: 100%; border-radius: 8px;">
+      <source
+        src="{{ url_for('static', filename='videos/' + title[:-3] + '.mp4') }}"
         type="video/mp4"
       >
       404 NOT FOUND
     </video>
-</section>
+  </section>
+  {% endif %}
 
+  <section class="screenshot-section">
+    <h2>Screenshot</h2>
+    <img 
+      src="{{ url_for('static', filename='screenshots/' + title[:-3] + '.png') }}"
+      alt="Screenshot of {{ title }}"
+      onerror="this.style.display='none'"
+      style="max-width:100%;border:1px solid #ccc;padding:4px;"
+    />
+  </section>
 </body>
 </html>
